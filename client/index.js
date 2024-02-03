@@ -77,11 +77,11 @@ async function eventHandler(event) {
     if (!idTimeout && !messagePost) {
       idTimeout = setTimeout(async () => {
         try {
-          await sendPost(answer, medias, 'md');
+          await sendPost("", medias, "md");
           resetValues();
         } catch (error) {
           console.log(error);
-          await sendPost(messagePost, medias, "md");
+          await sendPost("", medias, "md");
           resetValues();
         }
       }, 5000);
@@ -93,7 +93,11 @@ async function eventHandler(event) {
 
 async function run() {
   const client = await authorize();
-
+  const dialogs = await client.getDialogs();
+  console.log(
+    dialogs.find((item) => item.title === "Бро скинув мем"),
+    "dialogs"
+  );
   client.addEventHandler(
     (event) => eventHandler(event),
     new NewMessage({ chats: LISTEN_CHANNEL_ID.split(",") })
