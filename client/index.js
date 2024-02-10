@@ -13,9 +13,7 @@ const {
 } = process.env;
 
 let idTimeout = null;
-let medias = [];
-let messagePost = null;
-let base64 = null;
+let queue = {};
 
 const stringSession = new StringSession(SESSION_TOKEN);
 
@@ -46,10 +44,8 @@ async function authorize() {
 }
 
 const resetValues = () => {
-  messagePost = null;
-  base64 = null;
-  medias = [];
   clearTimeout(idTimeout);
+  queue = {};
   idTimeout = null;
 };
 
@@ -65,38 +61,51 @@ const sendPost = async (message, medias, parseMode) => {
   }
 };
 
+const fetchSendPost = async (medias = []) => {
+  try {
+    await sendPost("", medias, "md");
+  } catch (error) {
+    console.log(error);
+    await sendPost("", medias, "md");
+  }
+};
+
 async function eventHandler(event) {
   const message = event.message;
-  if (message) {
-    if (!messagePost) {
-      messagePost = message.message;
-    }
+  if (
+    message &&
+    (message.message.includes("Підписатись на QTV") || !message.message)
+  ) {
+    const groupId = message.groupedId?.value || message.id;
+    queue = { ...queue, [groupId]: queue[groupId] || {} };
     if (message.media) {
-      medias.push(message.media);
+      queue[groupId].medias = [...(queue[groupId].medias || []), message.media];
     }
-    if (!idTimeout && !messagePost) {
+    if (!idTimeout) {
       idTimeout = setTimeout(async () => {
-        try {
-          await sendPost("", medias, "md");
-          resetValues();
-        } catch (error) {
-          console.log(error);
-          await sendPost("", medias, "md");
-          resetValues();
-        }
+        await Promise.allSettled(
+          Object.values(queue).map((post) => fetchSendPost(post.medias))
+        );
+        resetValues();
       }, 5000);
     }
-  } else {
-    resetValues();
   }
 }
 
 async function run() {
-  const client = await authorize();
-  client.addEventHandler(
-    (event) => eventHandler(event),
-    new NewMessage({ chats: LISTEN_CHANNEL_ID.split(",") })
-  );
+  if (!client.connected) {
+    setInterval(() => {
+      console.log(client.connected, "client.connected");
+      if (!client.connected) {
+        run();
+      }
+    }, 1000 * 60 * 10);
+    const authClient = await authorize();
+    authClient.addEventHandler(
+      (event) => eventHandler(event),
+      new NewMessage({ chats: LISTEN_CHANNEL_ID.split(",") })
+    );
+  }
 }
 
 module.exports = run;
