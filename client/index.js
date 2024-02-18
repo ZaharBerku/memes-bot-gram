@@ -1,4 +1,4 @@
-const { TelegramClient, Api } = require("telegram");
+const { TelegramClient } = require("telegram");
 const { NewMessage } = require("telegram/events");
 const { StringSession } = require("telegram/sessions");
 const input = require("input");
@@ -61,12 +61,16 @@ const sendPost = async (message, medias, parseMode) => {
   }
 };
 
-const fetchSendPost = async (medias = []) => {
+const fetchSendPost = async (medias = [], name) => {
   try {
     await sendPost("", medias, "md");
   } catch (error) {
-    console.log(error);
+    console.log(error, "error");
+
     await sendPost("", medias, "md");
+  } finally {
+    const { [name]: alreadySend, ...lastQueue } = queue;
+    queue = lastQueue || {};
   }
 };
 
@@ -81,25 +85,23 @@ async function eventHandler(event) {
     if (message.media) {
       queue[groupId].medias = [...(queue[groupId].medias || []), message.media];
     }
-    if (!idTimeout) {
-      idTimeout = setTimeout(async () => {
-        await Promise.allSettled(
-          Object.values(queue).map((post) => fetchSendPost(post.medias))
-        );
-        resetValues();
-      }, 5000);
+    if (idTimeout) {
+      clearTimeout(idTimeout);
+      idTimeout = null;
     }
+    idTimeout = setTimeout(async () => {
+      await Promise.allSettled(
+        Object.entries(queue).map(([name, post]) =>
+          fetchSendPost(post.medias, name)
+        )
+      );
+    }, 5000);
   }
 }
 
 async function run() {
+  console.log(client.connected, "client.connected");
   if (!client.connected) {
-    setInterval(() => {
-      console.log(client.connected, "client.connected");
-      if (!client.connected) {
-        run();
-      }
-    }, 1000 * 60 * 10);
     const authClient = await authorize();
     authClient.addEventHandler(
       (event) => eventHandler(event),
