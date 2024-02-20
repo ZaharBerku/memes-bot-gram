@@ -54,11 +54,11 @@ const sendPost = async (message, medias, parseMode) => {
   const dialogIdBigInt = BigInt(cleanDialogIdString);
   if (medias.length) {
     const linkInEndMessage =
-      "<a href='https://t.me/+v4NkxLS3Qjo1Y2Iy'>Павуко меми😂</a>";
+      "\n\n" + "[Павуко меми😂](https://t.me/pavuko_mem)";
 
     await client.sendFile(dialogIdBigInt, {
       file: medias,
-      caption: message + linkInEndMessage,
+      caption: linkInEndMessage,
       parseMode,
     });
   }
@@ -66,11 +66,11 @@ const sendPost = async (message, medias, parseMode) => {
 
 const fetchSendPost = async (medias = [], name) => {
   try {
-    await sendPost("", medias, "html");
+    await sendPost("", medias, "md2");
   } catch (error) {
     console.log(error, "error");
 
-    await sendPost("", medias, "html");
+    await sendPost("", medias, "md2");
   } finally {
     const { [name]: alreadySend, ...lastQueue } = queue;
     queue = lastQueue || {};
