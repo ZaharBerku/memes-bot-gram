@@ -66,11 +66,11 @@ const sendPost = async (message, medias, parseMode) => {
 
 const fetchSendPost = async (medias = [], name) => {
   try {
-    await sendPost("", medias, "md");
+    await sendPost("", medias, "html");
   } catch (error) {
     console.log(error, "error");
 
-    await sendPost("", medias, "md");
+    await sendPost("", medias, "html");
   } finally {
     const { [name]: alreadySend, ...lastQueue } = queue;
     queue = lastQueue || {};
