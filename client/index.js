@@ -53,9 +53,12 @@ const sendPost = async (message, medias, parseMode) => {
   const cleanDialogIdString = CHANNEL_ID.replace("n", "");
   const dialogIdBigInt = BigInt(cleanDialogIdString);
   if (medias.length) {
+    const linkInEndMessage =
+      "<a href='https://t.me/+v4NkxLS3Qjo1Y2Iy'>Павуко меми😂</a>";
+
     await client.sendFile(dialogIdBigInt, {
       file: medias,
-      caption: message,
+      caption: message + linkInEndMessage,
       parseMode,
     });
   }
@@ -95,6 +98,7 @@ async function eventHandler(event) {
           fetchSendPost(post.medias, name)
         )
       );
+      resetValues();
     }, 5000);
   }
 }
